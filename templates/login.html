@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block head %}
+    {{ super() }}
+    {% if title %}
+        <title>{{ title }} - login</title>
+    {% else %}
+        <title>login</title>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    <div class="s2content">
+    <h1>Login to tensorflow iPython notebooks on CCV</h1>
+    <p>
+{% if error %}
+    <p class="error">{{error}}</p>
+{% endif %}
+        <form action="main" method="post">
+            Notebook:<br />
+                <select name="package">
+                    <option value="tensorflow">Tensorflow</option>
+                    <option value="matlab1520" selected>Course 1520 (Matlab)</option>
+                </select>
+            <br>
+            Username:<br /><input type="text" name="username" value="{{username}}"><br>
+            Password:<br /><input type="password" name="password" vale="{{password}}"><br>
+            <input type="submit" value="Submit">
+        </form>
+    </p>
+    </div>
+{% endblock %}
+
+{% block tailjs %}
+    {{ super() }}
+{% endblock %}

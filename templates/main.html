@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block head %}
+    {{ super() }}
+    {% if title %}
+        <title>{{ title }} - iPython notebook forwarder</title>
+    {% else %}
+        <title>iPython notebook forwarder</title>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+
+        <div class="s2content">
+            <h1>Login to tensorflow iPython notebooks on CCV</h1>
+            <p>
+                {% if error %}
+                    <p class="error">{{error}}</p>
+                {% endif %}
+                <p><strong>Connection status:</strong></p>
+                <pre>{{connection_info}}</pre>
+                {% if forward %}
+                    <p><strong>Connected!</strong></p>
+                    <form method=POST name="notebook" action="{{forward}}login?next=%2Ftree" hidden>
+                        <input type="text" name="password" value="{{nbpasswd}}">
+                    </form>
+                    <p>Forwarding to notebook at {{forward}} with password <emph>{{nbpasswd}}</emph></p>
+                    <script type="text/javascript">setTimeout("document.forms['notebook'].submit();",2000);</script>
+                {% else %}
+                    <script type="text/javascript">setTimeout("location.reload(true);",1000);</script>
+                {% endif %}
+            <p><a href="/reset_connection">Reset connection</a> | <a href="/">Back to login</a> | <a href="/kill_job">Kill running job</a></p>
+            </p>
+        </div>
+
+{% endblock %}
+
+{% block tailjs %}
+    {{ super() }}
+{% endblock %}

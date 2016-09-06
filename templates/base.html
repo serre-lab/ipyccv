@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        {% block head %}
+            <meta charset="utf-8">
+            <meta http-equiv="X-UA-Compatible" content="IE=edge">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <meta name="description" content="">
+            <meta name="author" content="">
+
+            <!-- CSS -->
+            <link href="http://getbootstrap.com/dist/css/bootstrap.min.css" rel="stylesheet">
+            <link href="static/css/base.css" rel="stylesheet">
+
+            <!-- Improved cross-browser rendering -->
+            <link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.0.0/normalize.css" rel="stylesheet">
+
+        {% endblock %}
+    </head>
+
+    <body>
+        {% block content %}
+        {% endblock %}
+
+        <!-- TO DO: footer block -->
+
+        {% block tailjs %}
+            <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+            <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+        {% endblock %}
+    </body>
+</html>
