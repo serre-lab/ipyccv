@@ -11,7 +11,7 @@ ssh -T guest018@ccv "bash ~/bin/killnb.sh"
 cd data
 rm *.tar.gz
 tar -zcf tensorflow.tar.gz dreamer.ipynb tensorflow_*.sh
-tar -zcf matlab1520.tar.gz matlab1520_*.sh golden.jpg Tutorial+1.ipynb circle.png
+tar -zcf matlab1520.tar.gz matlab1520_*.sh golden.jpg Tutorial1.ipynb circle.png
 cd ..
 
 # Copy server and data to the VM
