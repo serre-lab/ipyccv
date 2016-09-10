@@ -10,8 +10,10 @@ import os, time, select
 from paramiko.ssh_exception import SSHException
 import sys
 
-SSL_CERT_FILENAME = '/home/sven2guest/babas.crt'
-SSL_KEY_FILENAME = '/home/sven2guest/babas.key'
+#SSL_CERT_FILENAME = '/home/sven2guest/babas.crt'
+#SSL_KEY_FILENAME = '/home/sven2guest/babas.key'
+SSL_CERT_FILENAME = '/home/sven2guest/__clps_brown_edu_cert.cer'
+SSL_KEY_FILENAME = '/home/sven2guest/.ssh/star_clps_brown_edu_20160413.key'
 
 app = Flask(__name__)
 SESSION_TYPE = 'redis'
