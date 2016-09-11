@@ -37,6 +37,7 @@ class ClientData:
         self.remote_tunnel_port = None
         self.notebook_password = None
         self.next_command = ''
+        self.last_log = None
 
     def connect(self):
         if self.connect_thread is None:
@@ -45,10 +46,12 @@ class ClientData:
 
     def get_error(self): return self.error
 
-    def get_forward(self, request_url):
+    def get_last_log(self): return self.last_log
+
+    def get_forwards(self, request_url):
         if self.local_tunnel_port is None: return None
         this_hostname = request_url.split('/')[2].split(':')[0]
-        return 'http://' + this_hostname + ':' + str(self.local_tunnel_port) + '/'
+        return [{'url': 'http://' + this_hostname + ':' + str(self.local_tunnel_port) + '/login?next=%2Ftree', 'name': 'directory listing'}]
 
     def get_connection_info(self): return self.connection_info
 
@@ -85,29 +88,40 @@ class ClientData:
             self.connection_info = 'Setup environment'
             self.exec_command('wget --no-check-certificate -q ''%s'' -O %s ; chmod +x %s' % (ClientData.script_download_url, ClientData.script_filename, ClientData.script_filename)) # -N only if newer?
             self.connection_info = 'Starting server'
+            self.last_jobid = None
             # Run scheduler script until successful
             while True:
                 result = self.exec_command(ClientData.script_filename + ' ' + self.package + self.next_command)
                 self.next_command = ''
                 #print 'Output =', result
+                result_lines = result.splitlines()
+                result_data = None
+                for r in result_lines:
+                    if 'JOB ' in r:
+                        result_data = {}
+                        for i,v in enumerate(r.split(' ')):
+                            result_data[i] = v
+                        print result_data
+                        break
                 is_running = False
-                result_data = result.split(' ')
-                if result_data[0] != 'JOB':
+                if result_data is None:
                     #raise RuntimeError('unexpected output: %s' % result)
-                    sys.stderr.write('unexpected output: %s' % result)
+                    sys.stderr.write('unexpected output: %s\n' % result)
                 else:
                     status = result_data[1]
                     if status == 'OFF':
                         self.connection_info = 'Scheduling job'
                     elif status == 'QUEUED':
-                        self.connection_info = 'Waiting for job allocation (reason: %s).\nEstimated start: %s' % (result_data[2], result_data[3])
+                        self.connection_info = 'Waiting for job allocation (reason: %s).\nEstimated start: %s' % (result_data.get(2), result_data.get(3))
                     elif status == 'INIT':
-                        self.connection_info = 'Initializing notebook on node %s.\nRemaining node time: %s' % (result_data[2], result_data[3])
+                        self.connection_info = 'Initializing notebook on node %s.\nJob ID: %s\nRemaining node time: %s' % (result_data.get(2), result_data.get(3), result_data.get(4))
+                        self.last_jobid = result_data.get(3)
                     elif status == 'RUNNING':
-                        self.node_name = result_data[2]
-                        self.node_port = int(result_data[3])
-                        rem_time = result_data[4]
-                        self.notebook_password = result_data[5] if len(result_data) >= 4 else None
+                        self.node_name = result_data.get(2)
+                        self.node_port = int(result_data.get(3, 0))
+                        self.last_jobid = int(result_data.get(4))
+                        rem_time = result_data.get(5)
+                        self.notebook_password = result_data.get(6)
                         self.connection_info = 'Running notebook on node %s port %d.\nRemaining node time: %s.' % (self.node_name, self.node_port, rem_time.strip())
                         # Ensure tunnel is running
                         if self.remote_tunnel_port != self.node_port:
@@ -130,6 +144,9 @@ class ClientData:
                         self.connection_info = 'Killed job'
                     if not is_running:
                         self.local_tunnel_port = None
+                # Log file if there's a job running
+                if self.last_jobid is not None:
+                    self.last_log = self.exec_command('cat logs/slurm-%s.out' % self.last_jobid)
                 # Update interval: High during initialization; slow down later
                 time.sleep(10.0 if is_running else 1.0)
 
@@ -163,16 +180,28 @@ class ClientData:
         stdin, stdout, stderr = self.client.exec_command('bash -c "%s"' % cmd, get_pty=True)
         # Wait for the command to terminate
         output_data = ''
-        while not stdout.channel.exit_status_ready():
+        done = False
+        while not done:
+            # Done?
+            if stdout.channel.exit_status_ready():
+                done = True
             # Only print data if there is data to read in the channel
             if stdout.channel.recv_ready():
                 rl, wl, xl = select.select([stdout.channel], [], [], 0.0)
                 if len(rl) > 0:
                     output_data += stdout.channel.recv(1024).decode('utf-8')
+            # Double login
+            if 'oscar\'s password' in output_data:
+                print('Extra login... (data was: %s)' % output_data)
+                output_data = ''
+                stdin.write(self.password + '\n')
             # Answer question about first-time setup
             if 'Are you sure you want to continue connecting (yes/no)?' in output_data:
+                print('Confirmation... (data was: %s)' % output_data)
                 output_data = ''
                 stdin.write('yes\n')
+        output_data += stdout.read()
+        output_data = output_data.strip()
         sys.stderr.write('Output: %s\n' % output_data)
         error = stderr.read()
         if len(error):
@@ -209,8 +238,8 @@ def main():
     else:
         data = client_data[client_data_name]
     # Render by current status
-    forward = data.get_forward(request.url)
-    r = render_template('main.html', error=data.get_error(), forward=forward, connection_info=data.get_connection_info(), nbpasswd=data.get_notebook_password(), package=package)
+    forwards = data.get_forwards(request.url)
+    r = render_template('main.html', error=data.get_error(), forwards=forwards, connection_info=data.get_connection_info(), nbpasswd=data.get_notebook_password(), package=package, last_log=data.get_last_log())
     # Restart server on error
     if data.get_error() is not None:
         data.connect()
