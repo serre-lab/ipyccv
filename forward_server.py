@@ -9,6 +9,7 @@ from sshtunnel import SSHTunnelForwarder
 import os, time, select
 from paramiko.ssh_exception import SSHException
 import sys
+import datetime
 
 #SSL_CERT_FILENAME = '/home/sven2guest/babas.crt'
 #SSL_KEY_FILENAME = '/home/sven2guest/babas.key'
@@ -38,6 +39,8 @@ class ClientData:
         self.notebook_password = None
         self.next_command = ''
         self.last_log = None
+        self.last_query_time = None
+        self.time_left_until_kill = None
 
     # Notebook file lists
     NOTEBOOK_FILE_LIST = {
@@ -48,10 +51,17 @@ class ClientData:
         }
     }
 
+    # Kill connection if no request came in this duration
+    TIMEOUT_SECONDS = 60*10
+
     def connect(self):
+        self.refresh_query_time()
         if self.connect_thread is None:
             self.connect_thread = Thread(target=self._connect)
             self.connect_thread.start()
+
+    def refresh_query_time(self):
+        self.last_query_time = datetime.datetime.now()
 
     def get_error(self): return self.error
 
@@ -63,7 +73,12 @@ class ClientData:
         url = 'http://' + this_hostname + ':' + str(self.local_tunnel_port) + '/login?next='
         return [{'name': name, 'url': url + path.replace('/', '%2F')} for name, path in ClientData.NOTEBOOK_FILE_LIST[self.package].iteritems()]
 
-    def get_connection_info(self): return self.connection_info
+    def get_connection_info(self):
+        connection_info = self.connection_info
+        if self.time_left_until_kill is not None:
+            connection_info += '\nIdle time until kill: %d seconds' % self.time_left_until_kill
+        self.refresh_query_time()
+        return connection_info
 
     def get_notebook_password(self): return self.notebook_password
 
@@ -86,7 +101,7 @@ class ClientData:
 
     def _connect(self):
         # In background thread: Start server
-        #try:
+        try:
             # Initiate connection
             self.connection_info = 'ssh connecting'
             self.client = SSHClient()
@@ -100,6 +115,7 @@ class ClientData:
             self.connection_info = 'Starting server'
             self.last_jobid = None
             # Run scheduler script until successful
+            self.refresh_query_time()
             while True:
                 result = self.exec_command(ClientData.script_filename + ' ' + self.package + self.next_command)
                 self.next_command = ''
@@ -111,7 +127,6 @@ class ClientData:
                         result_data = {}
                         for i,v in enumerate(r.split(' ')):
                             result_data[i] = v
-                        print result_data
                         break
                 is_running = False
                 if result_data is None:
@@ -158,13 +173,23 @@ class ClientData:
                 if self.last_jobid is not None:
                     self.last_log = self.exec_command('cat logs/slurm-%s.out' % self.last_jobid)
                 # Update interval: High during initialization; slow down later
-                time.sleep(60.0 if is_running else 1.0)
+                time.sleep(10.0 if is_running else 1.0)
+                # Kill server if no request came in a while
+                self.time_left_until_kill = int(ClientData.TIMEOUT_SECONDS - (datetime.datetime.now() - self.last_query_time).total_seconds())
+                print 'User %s time left: %d seconds' % (self.username, self.time_left_until_kill)
+                if self.time_left_until_kill < 0:
+                    raise RuntimeError('Session timed out')
+            # Done
+            self.connect_thread = None
+            self.time_left_until_kill = None
 
-        #except Exception as e:
-        #    self.forward = None
-        #    self.error = e.message
-        #    self.clear()
-        #    print e
+        except Exception as e:
+            sys.stderr.write('============================\nKILLING SESSION FOR USER %s!\n%s\n============================\n' % (self.username, e.message))
+            self.forward = None
+            self.error = e.message
+            self.clear()
+            self.connect_thread = None
+            print e
 
     def stop_tunnel(self):
         if self.tunnel is not None:
@@ -183,6 +208,7 @@ class ClientData:
             self.client.close()
             self.client = None
         self.notebook_password = None
+        self.time_left_until_kill = None
 
     def exec_command(self, cmd):
         sys.stderr.write('Executing %s\n' % cmd)
@@ -202,17 +228,17 @@ class ClientData:
                     output_data += stdout.channel.recv(1024).decode('utf-8', 'ignore')
             # Double login
             if 'oscar\'s password' in output_data:
-                print('Extra login... (data was: %s)' % output_data)
+                #print('Extra login... (data was: %s)' % output_data)
                 output_data = ''
                 stdin.write(self.password + '\n')
             # Answer question about first-time setup
             if 'Are you sure you want to continue connecting (yes/no)?' in output_data:
-                print('Confirmation... (data was: %s)' % output_data)
+                #print('Confirmation... (data was: %s)' % output_data)
                 output_data = ''
                 stdin.write('yes\n')
         output_data += stdout.read().decode('utf-8', 'ignore')
         output_data = output_data.strip().encode('ascii', 'ignore').decode('ascii', 'ignore')
-        sys.stderr.write('Output: %s\n' % output_data)
+        #sys.stderr.write('Output: %s\n' % output_data)
         error = stderr.read()
         if len(error):
             sys.stderr.write('ERROR: %s\n' % error)

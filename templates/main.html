@@ -22,7 +22,7 @@
                 {% if forwards %}
                     <p><strong>Connected!</strong></p>
                     <p>The notebook job has been started! ({{nbpasswd}})</p>
-                    <p><strong>Links (open in new window):</strong><br/>
+                    <p><strong>Links (open in new window - KEEP THIS PAGE OPEN!):</strong><br/>
                         {% for forward in forwards %}
                             <form method=POST name="notebook" action="{{forward.url}}" target="_blank">
                                 <input type="text" name="password" value="{{nbpasswd}}" hidden>
@@ -30,6 +30,7 @@
                             </form><br />
                         {% endfor %}
                     </p>
+                    <script type="text/javascript">setTimeout("location.reload(true);",10000);</script>
                 {% else %}
                     <script type="text/javascript">setTimeout("location.reload(true);",1000);</script>
                 {% endif %}
