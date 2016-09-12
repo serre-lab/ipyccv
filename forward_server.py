@@ -43,7 +43,8 @@ class ClientData:
     NOTEBOOK_FILE_LIST = {
         'matlab1520': {
             'directory listing': '/tree',
-            'Tutorial 1': '/notebooks/Tutorial_1_EDITED.ipynb'
+            'Tutorial 1': '/notebooks/Tutorial_1.ipynb',
+            'Tutorial 2': '/notebooks/Tutorial_2.ipynb'
         }
     }
 
