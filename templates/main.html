@@ -3,16 +3,16 @@
 {% block head %}
     {{ super() }}
     {% if title %}
-        <title>{{ title }} - iPython notebook forwarder</title>
+        <title>{{ title }} - Jupyter notebook forwarder</title>
     {% else %}
-        <title>iPython notebook forwarder</title>
+        <title>Jupyter notebook forwarder</title>
     {% endif %}
 {% endblock %}
 
 {% block content %}
 
         <div class="s2content">
-            <h1>Login to tensorflow iPython notebooks on CCV</h1>
+            <h1>Login to course Jupyter notebooks on CCV</h1>
             <p>
                 {% if error %}
                     <p class="error">{{error}}</p>
@@ -22,9 +22,9 @@
                 {% if forwards %}
                     <p><strong>Connected!</strong></p>
                     <p>The notebook job has been started! ({{nbpasswd}})</p>
-                    <p><strong>Links:</strong><br/>
+                    <p><strong>Links (open in new window):</strong><br/>
                         {% for forward in forwards %}
-                            <form method=POST name="notebook" action="{{forward.url}}">
+                            <form method=POST name="notebook" action="{{forward.url}}" target="_blank">
                                 <input type="text" name="password" value="{{nbpasswd}}" hidden>
                                 <input type="submit" value="Click here to open {{forward.name}}">
                             </form><br />

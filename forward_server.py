@@ -39,6 +39,14 @@ class ClientData:
         self.next_command = ''
         self.last_log = None
 
+    # Notebook file lists
+    NOTEBOOK_FILE_LIST = {
+        'matlab1520': {
+            'directory listing': '/tree',
+            'Tutorial 1': '/notebooks/Tutorial_1_EDITED.ipynb'
+        }
+    }
+
     def connect(self):
         if self.connect_thread is None:
             self.connect_thread = Thread(target=self._connect)
@@ -51,7 +59,8 @@ class ClientData:
     def get_forwards(self, request_url):
         if self.local_tunnel_port is None: return None
         this_hostname = request_url.split('/')[2].split(':')[0]
-        return [{'url': 'http://' + this_hostname + ':' + str(self.local_tunnel_port) + '/login?next=%2Ftree', 'name': 'directory listing'}]
+        url = 'http://' + this_hostname + ':' + str(self.local_tunnel_port) + '/login?next='
+        return [{'name': name, 'url': url + path.replace('/', '%2F')} for name, path in ClientData.NOTEBOOK_FILE_LIST[self.package].iteritems()]
 
     def get_connection_info(self): return self.connection_info
 
@@ -76,7 +85,7 @@ class ClientData:
 
     def _connect(self):
         # In background thread: Start server
-        try:
+        #try:
             # Initiate connection
             self.connection_info = 'ssh connecting'
             self.client = SSHClient()
@@ -148,13 +157,13 @@ class ClientData:
                 if self.last_jobid is not None:
                     self.last_log = self.exec_command('cat logs/slurm-%s.out' % self.last_jobid)
                 # Update interval: High during initialization; slow down later
-                time.sleep(10.0 if is_running else 1.0)
+                time.sleep(60.0 if is_running else 1.0)
 
-        except Exception as e:
-            self.forward = None
-            self.error = e.message
-            self.clear()
-            print e
+        #except Exception as e:
+        #    self.forward = None
+        #    self.error = e.message
+        #    self.clear()
+        #    print e
 
     def stop_tunnel(self):
         if self.tunnel is not None:
@@ -189,7 +198,7 @@ class ClientData:
             if stdout.channel.recv_ready():
                 rl, wl, xl = select.select([stdout.channel], [], [], 0.0)
                 if len(rl) > 0:
-                    output_data += stdout.channel.recv(1024).decode('utf-8')
+                    output_data += stdout.channel.recv(1024).decode('utf-8', 'ignore')
             # Double login
             if 'oscar\'s password' in output_data:
                 print('Extra login... (data was: %s)' % output_data)
@@ -200,8 +209,8 @@ class ClientData:
                 print('Confirmation... (data was: %s)' % output_data)
                 output_data = ''
                 stdin.write('yes\n')
-        output_data += stdout.read()
-        output_data = output_data.strip()
+        output_data += stdout.read().decode('utf-8', 'ignore')
+        output_data = output_data.strip().encode('ascii', 'ignore').decode('ascii', 'ignore')
         sys.stderr.write('Output: %s\n' % output_data)
         error = stderr.read()
         if len(error):

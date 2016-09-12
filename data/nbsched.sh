@@ -29,10 +29,10 @@ if [[ "$2" == "START" ]]; then
 	echo "Loading notebook package from $NOTEBOOKDOWNLOAD..."
 	echo wget --no-check-certificate -N "$NOTEBOOKDOWNLOAD" -O ${PACKAGE}.tar.gz
 	wget --no-check-certificate -N "$NOTEBOOKDOWNLOAD" -O ${PACKAGE}.tar.gz
-	ls -l
-	sleep 10
+	echo "Unpacking notebook scripts..."
+	tar -zxvf ${PACKAGE}.tar.gz ${PACKAGE}_setup.sh ${PACKAGE}_start.sh
 	echo "Unpacking notebooks..."
-	tar -zxvf ${PACKAGE}.tar.gz #--keep-old-files
+	tar -zxvf ${PACKAGE}.tar.gz --keep-old-files
 	# Perform setup
 	echo "Run setup..."
 	if [ -f "${PACKAGE}_setup.sh" ]; then
