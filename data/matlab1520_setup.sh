@@ -18,8 +18,8 @@ if [ ! -d p4 ]; then
         python3 setup.py build --build-base="$HOME/scratch/matlabp3" install
         cd $PSAVE
         pip install -Iv setuptools ipykernel ipywidgets notebook
-        # Later revisions need python3.5
-        pip install git+https://github.com/Calysto/matlab_kernel@4372db233374979668add9dc3deb80063f6d0f20
+        pip install git+https://github.com/Calysto/matlab_kernel
+        #pip install git+https://github.com/Calysto/matlab_kernel@4372db233374979668add9dc3deb80063f6d0f20 # This revision hangs on large output (but is faster :( )
         #pip install -Iv matlab_kernel backports.shutil_get_terminal_size pathlib2
         # Matlab with JVM startup
         ln -s $(which matlab-threaded) ./p4/bin/matlab
