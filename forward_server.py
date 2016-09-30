@@ -47,7 +47,9 @@ class ClientData:
         'matlab1520': {
             'directory listing': '/tree',
             'Tutorial 1': '/notebooks/Tutorial_1.ipynb',
-            'Tutorial 2': '/notebooks/Tutorial_2.ipynb'
+            'Tutorial 2': '/notebooks/Tutorial_2.ipynb',
+            'Tutorial 3': '/notebooks/Tutorial_3.ipynb',
+            'Tutorial 4': '/notebooks/Tutorial_4.ipynb'
         }
     }
 
@@ -314,4 +316,4 @@ def download(filename):
     return send_from_directory(directory=data_dir, filename=filename)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=11000, debug=True, ssl_context=(SSL_CERT_FILENAME, SSL_KEY_FILENAME))
+    app.run(host='0.0.0.0', port=11000, debug=False, ssl_context=(SSL_CERT_FILENAME, SSL_KEY_FILENAME))
