@@ -61,7 +61,7 @@ if [[ -z "$JOBSTATUS" ]]; then
 	# No job is running. Queue ourselves with START parameter, which will start the actual notebook.
 	echo JOB OFF
 	mkdir -p logs
-	sbatch -p gpu --gres=gpu:1 --mem=32g -t 3:00:00 -o logs/slurm-%j.out "$0" "$PACKAGE" START
+	sbatch -p gpu --gres=gpu:1 --mem=20g -t 3:00:00 -o logs/slurm-%j.out "$0" "$PACKAGE" START
 	if [ $? -ne 0 ]; then
 	    sbatch --mem=32g -t 3:00:00 -o logs/slurm-%j.out "$0" "$PACKAGE" START
 	fi
