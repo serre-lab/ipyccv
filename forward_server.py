@@ -50,7 +50,8 @@ class ClientData:
             'Tutorial 2': '/notebooks/Tutorial_2.ipynb',
             'Tutorial 3': '/notebooks/Tutorial_3.ipynb',
             'Tutorial 4': '/notebooks/Tutorial_4.ipynb',
-            'Tutorial 5': '/notebooks/Tutorial_5.ipynb'
+            'Tutorial 5': '/notebooks/Tutorial_5.ipynb',
+            'Tutorial 6': '/notebooks/Tutorial_6.ipynb'
         }
     }
 
